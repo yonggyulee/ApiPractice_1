@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mirero.DAQ.Test.Custom.Yglee.ApiService", "Mirero.DAQ.Test.Custom.Yglee.ApiService\Mirero.DAQ.Test.Custom.Yglee.ApiService.csproj", "{82C7B2D3-233E-4879-9B23-FA5C2F8CED21}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mirero.DAQ.Test.Custom.Yglee.ApiService.Models", "Mirero.DAQ.Test.Custom.Yglee.ApiService.Models\Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.csproj", "{E8EC93BF-C498-4067-B087-B89C13A9E1BB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{82C7B2D3-233E-4879-9B23-FA5C2F8CED21}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{82C7B2D3-233E-4879-9B23-FA5C2F8CED21}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{82C7B2D3-233E-4879-9B23-FA5C2F8CED21}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{82C7B2D3-233E-4879-9B23-FA5C2F8CED21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8EC93BF-C498-4067-B087-B89C13A9E1BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8EC93BF-C498-4067-B087-B89C13A9E1BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8EC93BF-C498-4067-B087-B89C13A9E1BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8EC93BF-C498-4067-B087-B89C13A9E1BB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
