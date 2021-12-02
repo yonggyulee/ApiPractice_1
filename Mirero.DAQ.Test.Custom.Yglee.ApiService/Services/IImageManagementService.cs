@@ -119,12 +119,6 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
             var verifiedId = IdToVerifiedId(id);
             Console.WriteLine($"UPLOADIMAGEFILE : {verifiedId}");
 
-            if (imageFile == null)
-            {
-                Console.WriteLine("ImageFile is null.");
-                //return NotFound("imageFile is null.");
-            }
-
             if (imageFile != null)
             {
                 Console.WriteLine($"IMAGEFILE SAVE : {verifiedId}");

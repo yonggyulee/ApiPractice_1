@@ -6,8 +6,6 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Storage;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Storage;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Services;
@@ -78,33 +76,21 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpPut("{datasetId}/{id}")]
         public async Task<IActionResult> PutImage(string datasetId, string id, ImageDTO imageDto)
         {
-            await using var context = DatasetDbContext.GetInstance(datasetId);
             if (id != imageDto.ID)
             {
                 return BadRequest();
             }
 
             var image = _mapper.Map<Image>(imageDto);
-            
-            context.Entry(image).State = EntityState.Modified;
 
-            try
-            {
-                await context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ImageExists(context, id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
+            var result = await _imgService.UpdateAsync(datasetId, id, image);
 
-            return Content($"Image is updated.({image.ID})");
+            return result switch
+            {
+                0 => NotFound(),
+                -1 => Conflict($"An error occurred while updating the Image.({image.ID})"),
+                _ => Content($"Image is updated.({image.ID})")
+            };
         }
 
         // POST: api/Images/datasetId
@@ -112,12 +98,14 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpPost("{datasetId}")]
         public async Task<ActionResult<ImageDTO>> PostImage(string datasetId, ImageDTO imageDto)
         {
-            await using var context = DatasetDbContext.GetInstance(datasetId);
-
             var image = _mapper.Map<Image>(imageDto);
-            
-            context.Images.Add(image);
-            await context.SaveChangesAsync();
+
+            image = await _imgService.AddAsync(datasetId, image);
+
+            if (image == null)
+            {
+                return NotFound($"SampleID doesn't exist.({imageDto.SampleID})");
+            }
 
             return CreatedAtAction("GetImage", new { datasetId = datasetId, id = image.ID }, imageDto);
         }
@@ -126,36 +114,23 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         // 이미지 파일 업로드
         [HttpPost("upload/{datasetId}/{id}")]
         public async Task<Object> UploadImageFile(string datasetId, string id, IFormFile imageFile)
-        {
-            var verifiedId = IdToVerifiedId(id);
-            Console.WriteLine($"UPLOADIMAGEFILE : {verifiedId}");
-            
+        {            
             if (imageFile == null)
             {
                 Console.WriteLine("ImageFile is null.");
                 return NotFound("imageFile is null.");
             }
 
-            if (imageFile != null)
+            try
             {
-                Console.WriteLine($"IMAGEFILE SAVE : {verifiedId}");
-                // 이미지 파일을 저장할 폴더 경로
-                string currentPath = 
-                    Path.Combine(Environment.CurrentDirectory, "database", datasetId, "images");
-
-                var verifiedPath = PathToVerifiedPath(Path.Combine(currentPath, verifiedId));
-                
-                try
-                {
-                    // 파일 저장
-                    SaveFile(imageFile, verifiedPath);
-                }
-                catch (IOException)
-                {
-                    Conflict();
-                }
+                // 파일 저장
+                _imgService.Upload(datasetId, id, imageFile);
             }
-            
+            catch (IOException)
+            {
+                Conflict();
+            }
+
             return Content("Success");
         }
 
@@ -163,107 +138,13 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpDelete("{datasetId}/{id}")]
         public async Task<IActionResult> DeleteImage(string datasetId, string id)
         {
-            await using var context = DatasetDbContext.GetInstance(datasetId);
-
-            var image = await context.Images.FindAsync(id);
+            var image = await _imgService.RemoveAsync(datasetId, id);
             if (image == null)
             {
                 return NotFound();
             }
-
-            var sample = await context.Samples.FindAsync(image.SampleID);
-            if (sample != null) sample.ImageCount -= 1;
-
-            context.Images.Remove(image);
-            
-            string currentPath = 
-                Path.Combine(Environment.CurrentDirectory, image.Path);
-
-            var verifiedPath = PathToVerifiedPath(currentPath);
-
-            RemoveFile(verifiedPath);
-            
-            await context.SaveChangesAsync();
             
             return CreatedAtAction("GetImage", new { datasetId = datasetId, id = image.ID }, _mapper.Map<ImageDTO>(image));
-        }
-
-        private bool ImageExists(DatasetDbContext context, string id)
-        {
-            return context.Images.Any(e => e.ID == id);
-        }
-        
-        private void SaveFile(IFormFile imgFile, string path)
-        {
-            // 경로 검증
-            Console.WriteLine($"Path : {path}");
-            string folderPath = path.Substring(0, path.LastIndexOf('\\'));
-            Console.WriteLine($"FolderPath : {folderPath}");
-
-            DirectoryInfo di = new DirectoryInfo(folderPath);
-            if (di.Exists == false)
-            {
-                di.Create();
-            }
-
-            if (imgFile.Length > 0)
-            {
-                using (var imgStream = imgFile.OpenReadStream())
-                {
-                    using (var fileStream = new FileStream(path, FileMode.Create))
-                    {
-                        imgStream.CopyTo(fileStream);
-                    }
-                }
-            }
-        }
-
-        private bool RemoveFile(string path)
-        {
-            if (System.IO.File.Exists(path))
-            {
-                try
-                {
-                    System.IO.File.Delete(path);
-                }
-                catch (IOException)
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        private async Task<IActionResult> GetFile(string path)
-        {
-            if (System.IO.File.Exists(path))
-            {
-                byte[] bytes;
-                using (FileStream file = new FileStream(path, FileMode.Open))
-                {
-                    try
-                    {
-                        bytes = new byte[file.Length];
-                        await file.ReadAsync(bytes);
-
-                        return File(bytes, "application/octet-stream");
-                    }catch(Exception)
-                    {
-                        return StatusCode(StatusCodes.Status500InternalServerError);
-                    }
-                }
-            }
-            return NotFound();
-        }
-
-        private string PathToVerifiedPath(string path)
-        {
-            return path.Replace('/', '\\');
-        }
-
-        private string IdToVerifiedId(string id)
-        {
-            return id.Replace("%2F", "/");
         }
     }
 }
