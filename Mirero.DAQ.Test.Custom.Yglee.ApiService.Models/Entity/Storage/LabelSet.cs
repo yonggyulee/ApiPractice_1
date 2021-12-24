@@ -12,13 +12,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Storage
     public class LabelSet
     {
         [Key]
-        [Column("id")]
-        public string ID { get; set; }
+        public string Id { get; set; }
         
-        [Column("class_code_set_id")]
-        public int ClassCodeSetID { get; set; }
+        public int ClassCodeSetId { get; set; }
         
-        [Column("descriptions")]
         public string Descriptions { get; set; }
 
         public ICollection<ClassificationLabel> ClassificationLabels { get; set; } = new List<ClassificationLabel>();

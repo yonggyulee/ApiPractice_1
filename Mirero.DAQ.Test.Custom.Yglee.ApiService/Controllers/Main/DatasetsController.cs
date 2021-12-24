@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
+using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Services;
@@ -15,33 +17,30 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class DatasetsController : ControllerBase
     {
         private readonly IDatasetManagementService _dsService;
-        private readonly IMapper _mapper;
 
-        public DatasetsController(IDatasetManagementService dsService, IMapper mapper)
+        public DatasetsController(IDatasetManagementService dsService)
         {
             _dsService = dsService;
-            _mapper = mapper;
         }
 
         // GET: api/Datasets
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DatasetDTO>>> GetDatasets()
         {
-            var dsList = await _dsService.ToListAsync();
-            return dsList.Select(d => _mapper.Map<DatasetDTO>(d)).ToList();
+            return await _dsService.ToListAsync();
         }
 
         // GET: api/Datasets/5
         [HttpGet("{id}")]
         public async Task<ActionResult<DatasetDTO>> GetDataset(int id)
         {
-            var dataset = await _dsService.FindAsync(id);
+            var datasetDto = await _dsService.FindAsync(id);
             
-            if (dataset == null)
+            if (datasetDto == null)
             {
                 return NotFound();
             }
-            return _mapper.Map<DatasetDTO>(dataset);
+            return datasetDto;
         }
 
         // PUT: api/Datasets/5
@@ -49,20 +48,18 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutDataset(int id, DatasetDTO datasetDto)
         {
-            if (id != datasetDto.ID)
+            if (id != datasetDto.Id)
             {
                 return BadRequest();
             }
 
-            var dataset = _mapper.Map<Dataset>(datasetDto);
-
-            var result = await _dsService.UpdateDataset(id, dataset);
+            var result = await _dsService.UpdateDataset(id, datasetDto);
 
             return result switch
             {
                 0 => NotFound(),
-                -1 => Conflict($"An error occurred while updating the Dataset.({dataset.ID})"),
-                _ => Content($"Dataset is updated.({dataset.ID})")
+                -1 => Conflict($"An error occurred while updating the Dataset.({datasetDto.Id})"),
+                _ => Content($"Dataset is updated.({datasetDto.Id})")
             };
         }
 
@@ -73,10 +70,9 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         {
             try
             {
-                var dataset = _mapper.Map<Dataset>(datasetDto);
-                dataset = await _dsService.CreateDatasetAsync(dataset);
+                datasetDto = await _dsService.CreateDatasetAsync(datasetDto);
 
-                return CreatedAtAction("GetDataset", new { id = datasetDto.ID }, _mapper.Map<DatasetDTO>(dataset));
+                return CreatedAtAction("GetDataset", new { id = datasetDto.Id }, datasetDto);
             }
             catch(Exception e)
             {
@@ -89,14 +85,14 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDataset(int id)
         {
-            var dataset = await _dsService.RemoveDatasetAsync(id);
+            var datasetDto = await _dsService.RemoveDatasetAsync(id);
 
-            if (dataset == null)
+            if (datasetDto == null)
             {
                 return NotFound();
             }
 
-            return CreatedAtAction("GetDataset", new { id = dataset.ID }, _mapper.Map<DatasetDTO>(dataset));
+            return CreatedAtAction("GetDataset", new { id = datasetDto.Id }, datasetDto.Adapt<DatasetDTO>());
         }
     }
 }

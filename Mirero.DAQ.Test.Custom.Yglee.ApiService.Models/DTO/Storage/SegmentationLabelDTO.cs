@@ -4,13 +4,13 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Storage
 {
     public class SegmentationLabelDTO
     {
-        public int ID { get; set; }
+        public int Id { get; set; }
 
-        public string LabelSetID { get; set; }
+        public string LabelSetId { get; set; }
 
-        public string SampleID { get; set; }
+        public string SampleId { get; set; }
 
-        public string ImageID { get; set; }
+        public string ImageId { get; set; }
 
         public string LabelPath { get; set; }
     }

@@ -5,7 +5,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main
 {
     public class ClassCodeSetDTO
     {
-        public string ID { get; set; }
+        public string Id { get; set; }
 
         public string TaskType { get; set; }
         

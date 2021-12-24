@@ -5,7 +5,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main
 {
     public class ClassCodeDTO
     {
-        public int ID { get; set; }                    
+        public int Id { get; set; }                    
         
         public string Class_Code { get; set; }
         
@@ -13,6 +13,6 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main
         
         public string Info { get; set; }                
         
-        public string ClassCodeSetID { get; set; }
+        public string ClassCodeSetId { get; set; }
     }
 }

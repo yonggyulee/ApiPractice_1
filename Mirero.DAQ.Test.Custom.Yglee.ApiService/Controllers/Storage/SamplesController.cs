@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -16,7 +15,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
     [ApiController]
     public class SamplesController : ControllerBase
     {
-        private readonly IMapper _mapper;
+        private readonly MainDbContext _mainDbContext;
 
         // private readonly DatasetDbContext context;
         //
@@ -24,9 +23,9 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         // {
         //     this.context = context;
         // }
-        public SamplesController(IMapper mapper)
+        public SamplesController(MainDbContext mainDbContext)
         {
-            _mapper = mapper;
+            _mainDbContext = mainDbContext;
         }
 
         // GET: api/Samples/datasetId
@@ -36,7 +35,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
             return await context.Samples
-                .Select(s => _mapper.Map<SampleDTO>(s))
+                .Select(s => s.Adapt<SampleDTO>())
                 .ToListAsync();
         }
 
@@ -53,7 +52,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 return NotFound();
             }
 
-            return _mapper.Map<SampleDTO>(sample);
+            return sample.Adapt<SampleDTO>();
         }
 
         // PUT: api/Samples/datasetId/5
@@ -61,14 +60,19 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpPut("{datasetId}/{id}")]
         public async Task<IActionResult> PutSample(string datasetId, string id, SampleDTO sampleDto)
         {
-            await using var context = DatasetDbContext.GetInstance(datasetId);
-            
-            if (id != sampleDto.ID)
+            if (id != sampleDto.Id)
             {
                 return BadRequest();
             }
 
-            var sample = _mapper.Map<Sample>(sampleDto);
+            if (!await VerifyDatasetId(datasetId, sampleDto.DatasetId))
+            {
+                return BadRequest($"Dataset ID does not match DatasetID.(DatasetID:{sampleDto.DatasetId})");
+            }
+
+            await using var context = DatasetDbContext.GetInstance(datasetId);
+            
+            var sample = sampleDto.Adapt<Sample>();
             
             context.Entry(sample).State = EntityState.Modified;
 
@@ -88,7 +92,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 }
             }
 
-            return Content($"Sample is updated.({sample.ID})");
+            return Content($"Sample is updated.({sample.Id})");
         }
 
         // POST: api/Samples/datasetId
@@ -96,14 +100,19 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpPost("{datasetId}")]
         public async Task<ActionResult<SampleDTO>> PostSample(string datasetId, SampleDTO sampleDto)
         {
+            if (!await VerifyDatasetId(datasetId, sampleDto.DatasetId))
+            {
+                return BadRequest($"Dataset ID does not match DatasetID.(DatasetID:{sampleDto.DatasetId})");
+            }
+
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
-            var sample = _mapper.Map<Sample>(sampleDto);
+            var sample = sampleDto.Adapt<Sample>();
             
             context.Samples.Add(sample);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetSample", new { datasetId = datasetId, id = sample.ID }, sampleDto);
+            return CreatedAtAction("GetSample", new { datasetId = datasetId, id = sample.Id }, sampleDto);
         }
 
         // DELETE: api/Samples/datasetId/5
@@ -120,12 +129,18 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             context.Samples.Remove(sample);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetSample", new { datasetId = datasetId, id = sample.ID }, _mapper.Map<SampleDTO>(sample));
+            return CreatedAtAction("GetSample", new { datasetId = datasetId, id = sample.Id }, sample.Adapt<SampleDTO>());
         }
 
         private bool SampleExists(DatasetDbContext context, string id)
         {
-            return context.Samples.Any(e => e.ID == id);
+            return context.Samples.Any(e => e.Id == id);
+        }
+
+        private async Task<bool> VerifyDatasetId(string dsUri, int dsId)
+        {
+            var dataset = await _mainDbContext.Datasets.FirstAsync(d => d.Uri == dsUri);
+            return dataset.Id == dsId;
         }
     }
 }

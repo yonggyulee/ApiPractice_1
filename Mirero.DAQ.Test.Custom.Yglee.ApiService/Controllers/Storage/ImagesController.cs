@@ -3,21 +3,24 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Storage;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Storage;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Services;
 
 namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
 {
+    // TODO  API의 버전은 어떻게 관리하게 되는가.(예: /api/v1/images )
+    // TODO  Controller 클래스 명칭으로 부터 api endpoint가 정해지는 것이 정말 유익한지 고민 
+    //       (ref : https://code-maze.com/aspnetcore-webapi-best-practices/#routing)
     [Route("api/[controller]")]
     [ApiController]
     public class ImagesController : ControllerBase
     {
-        private readonly IMapper _mapper;
-
         private readonly IImageManagementService _imgService;
         // private readonly DatasetDbContext context;
         //
@@ -26,9 +29,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         //     this.context = context;
         // }
 
-        public ImagesController(IMapper mapper, IImageManagementService _imgService)
+        public ImagesController(IImageManagementService _imgService)
         {
-            _mapper = mapper;
             this._imgService = _imgService;
         }
 
@@ -36,22 +38,21 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpGet("{datasetId}")]
         public async Task<ActionResult<IEnumerable<ImageDTO>>> GetImages(string datasetId)
         {
-            var imgList = await _imgService.ToListAsync(datasetId);
-            return imgList.Select(i => _mapper.Map<ImageDTO>(i)).ToList();
+            return await _imgService.ToListAsync(datasetId);
         }
 
         // GET: api/Images/datasetId/5
         [HttpGet("{datasetId}/{id}")]
         public async Task<ActionResult<ImageDTO>> GetImage(string datasetId, string id)
         {
-            var image = await _imgService.FindAsync(datasetId, id);
+            var imageDto = await _imgService.FindAsync(datasetId, id);
 
-            if (image == null)
+            if (imageDto == null)
             {
                 return NotFound();
             }
 
-            return _mapper.Map<ImageDTO>(image);
+            return imageDto;
         }
         
         // GET: api/Images/image_file/datasetId/5
@@ -67,7 +68,9 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             }
 
             // 파일 반환
-            return File(bytes, "application/octet-stream"); ;
+            // TODO Content-Type 이 확인 (예: 이미지 타입)
+            // TODO FileStreamResult() 를 사용하여 성능을 향상시킬 수 없는가?(예: 현재 구현은 Full Buffering)
+            return File(bytes, "application/octet-stream"); 
             
         }
 
@@ -76,20 +79,17 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpPut("{datasetId}/{id}")]
         public async Task<IActionResult> PutImage(string datasetId, string id, ImageDTO imageDto)
         {
-            if (id != imageDto.ID)
+            if (id != imageDto.Id)
             {
                 return BadRequest();
             }
-
-            var image = _mapper.Map<Image>(imageDto);
-
-            var result = await _imgService.UpdateAsync(datasetId, id, image);
+            var result = await _imgService.UpdateAsync(datasetId, id, imageDto);
 
             return result switch
             {
                 0 => NotFound(),
-                -1 => Conflict($"An error occurred while updating the Image.({image.ID})"),
-                _ => Content($"Image is updated.({image.ID})")
+                -1 => Conflict($"An error occurred while updating the Image.({imageDto.Id})"),
+                _ => Content($"Image is updated.({imageDto.Id})")
             };
         }
 
@@ -98,16 +98,14 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpPost("{datasetId}")]
         public async Task<ActionResult<ImageDTO>> PostImage(string datasetId, ImageDTO imageDto)
         {
-            var image = _mapper.Map<Image>(imageDto);
+            imageDto = await _imgService.AddAsync(datasetId, imageDto);
 
-            image = await _imgService.AddAsync(datasetId, image);
-
-            if (image == null)
+            if (imageDto == null)
             {
-                return NotFound($"SampleID doesn't exist.({imageDto.SampleID})");
+                return NotFound($"SampleID doesn't exist.({imageDto.SampleId})");
             }
 
-            return CreatedAtAction("GetImage", new { datasetId = datasetId, id = image.ID }, imageDto);
+            return CreatedAtAction("GetImage", new { datasetId = datasetId, id = imageDto.Id }, imageDto);
         }
         
         // POST: api/Images/upload/datasetId/5
@@ -138,13 +136,13 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpDelete("{datasetId}/{id}")]
         public async Task<IActionResult> DeleteImage(string datasetId, string id)
         {
-            var image = await _imgService.RemoveAsync(datasetId, id);
-            if (image == null)
+            var imageDto = await _imgService.RemoveAsync(datasetId, id);
+            if (imageDto == null)
             {
                 return NotFound();
             }
             
-            return CreatedAtAction("GetImage", new { datasetId = datasetId, id = image.ID }, _mapper.Map<ImageDTO>(image));
+            return CreatedAtAction("GetImage", new { datasetId = datasetId, id = imageDto.Id }, imageDto);
         }
     }
 }

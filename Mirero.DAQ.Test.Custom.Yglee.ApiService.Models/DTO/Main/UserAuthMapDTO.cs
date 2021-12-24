@@ -4,8 +4,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main
 {
     public class UserAuthMapDTO
     {
-        public string UserID { get; set; }
+        public string UserId { get; set; }
         
-        public string AuthID { get; set; }
+        public string AuthId { get; set; }
     }
 }

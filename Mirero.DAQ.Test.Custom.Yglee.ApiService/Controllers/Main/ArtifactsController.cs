@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -17,12 +16,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class ArtifactsController : ControllerBase
     {
         private readonly MainDbContext context;
-        private readonly IMapper _mapper;
 
-        public ArtifactsController(MainDbContext context, IMapper mapper)
+        public ArtifactsController(MainDbContext context)
         {
             this.context = context;
-            _mapper = mapper;
         }
 
         // GET: api/Artifacts
@@ -30,7 +27,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         public async Task<ActionResult<IEnumerable<ArtifactDTO>>> GetArtifacts()
         {
             return await context.Artifacts
-                .Select(a => _mapper.Map<ArtifactDTO>(a))
+                .Select(a => a.Adapt<ArtifactDTO>())
                 .ToListAsync();
         }
 
@@ -44,8 +41,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             {
                 return NotFound();
             }
-            
-            return _mapper.Map<ArtifactDTO>(artifact);
+
+            return artifact.Adapt<ArtifactDTO>();
         }
 
         // PUT: api/Artifacts/5
@@ -53,12 +50,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutArtifact(int id, ArtifactDTO artifactDto)
         {
-            if (id != artifactDto.ID)
+            if (id != artifactDto.Id)
             {
                 return BadRequest();
             }
 
-            var artifact = _mapper.Map<Artifact>(artifactDto);
+            var artifact = artifactDto.Adapt<Artifact>();
             
             context.Entry(artifact).State = EntityState.Modified;
 
@@ -78,7 +75,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 }
             }
 
-            return Content($"Artifact is updated.({artifact.ID})");
+            return Content($"Artifact is updated.({artifact.Id})");
         }
 
         // POST: api/Artifacts
@@ -86,12 +83,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPost]
         public async Task<ActionResult<ArtifactDTO>> PostArtifact(ArtifactDTO artifactDto)
         {
-            var artifact = _mapper.Map<Artifact>(artifactDto);
+            var artifact = artifactDto.Adapt<Artifact>();
             
             context.Artifacts.Add(artifact);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetArtifact", new { id = artifact.ID }, artifactDto);
+            return CreatedAtAction("GetArtifact", new { id = artifact.Id }, artifactDto);
         }
 
         // DELETE: api/Artifacts/5
@@ -107,12 +104,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             context.Artifacts.Remove(artifact);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetArtifact", new { id = artifact.ID }, _mapper.Map<ArtifactDTO>(artifact));
+            return CreatedAtAction("GetArtifact", new { id = artifact.Id }, artifact.Adapt<ArtifactDTO>());
         }
 
         private bool ArtifactExists(int id)
         {
-            return context.Artifacts.Any(e => e.ID == id);
+            return context.Artifacts.Any(e => e.Id == id);
         }
     }
 }

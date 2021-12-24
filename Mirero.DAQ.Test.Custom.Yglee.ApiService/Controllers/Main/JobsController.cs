@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -17,12 +16,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class JobsController : ControllerBase
     {
         private readonly MainDbContext context;
-        private readonly IMapper _mapper;
 
-        public JobsController(MainDbContext context, IMapper mapper)
+        public JobsController(MainDbContext context)
         {
             this.context = context;
-            _mapper = mapper;
         }
 
         // GET: api/Jobs
@@ -30,7 +27,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         public async Task<ActionResult<IEnumerable<JobDTO>>> GetJobs()
         {
             return await context.Jobs
-                .Select(j => _mapper.Map<JobDTO>(j)).ToListAsync();
+                .Select(j => j.Adapt<JobDTO>()).ToListAsync();
         }
 
         // GET: api/Jobs/5
@@ -44,7 +41,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 return NotFound();
             }
 
-            return _mapper.Map<JobDTO>(job);
+            return job.Adapt<JobDTO>();
         }
 
         // PUT: api/Jobs/5
@@ -52,12 +49,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutJob(int id, JobDTO jobDto)
         {
-            if (id != jobDto.ID)
+            if (id != jobDto.Id)
             {
                 return BadRequest();
             }
 
-            var job = _mapper.Map<Job>(jobDto);
+            var job = jobDto.Adapt<Job>();
             
             context.Entry(job).State = EntityState.Modified;
 
@@ -77,7 +74,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 }
             }
 
-            return Content($"Job is updated.({job.ID})");
+            return Content($"Job is updated.({job.Id})");
         }
 
         // POST: api/Jobs
@@ -85,12 +82,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPost]
         public async Task<ActionResult<JobDTO>> PostJob(JobDTO jobDto)
         {
-            var job = _mapper.Map<Job>(jobDto);
+            var job = jobDto.Adapt<Job>();
             
             context.Jobs.Add(job);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetJob", new { id = job.ID }, jobDto);
+            return CreatedAtAction("GetJob", new { id = job.Id }, jobDto);
         }
 
         // DELETE: api/Jobs/5
@@ -106,12 +103,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             context.Jobs.Remove(job);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetJob", new { id = job.ID }, _mapper.Map<JobDTO>(job));
+            return CreatedAtAction("GetJob", new { id = job.Id }, job.Adapt<JobDTO>());
         }
 
         private bool JobExists(int id)
         {
-            return context.Jobs.Any(e => e.ID == id);
+            return context.Jobs.Any(e => e.Id == id);
         }
     }
 }

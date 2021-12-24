@@ -4,16 +4,10 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces;
 
-namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services.Utils
+namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Utils
 {
-    public interface IFileManager
-    {
-        void SaveFile(IFormFile imgFile, string path);
-        bool RemoveFile(string path); 
-        Task<byte[]?> LoadFile(string path);
-    }
-
     public class FileManager : IFileManager
     {
         public void SaveFile(IFormFile imgFile, string path)

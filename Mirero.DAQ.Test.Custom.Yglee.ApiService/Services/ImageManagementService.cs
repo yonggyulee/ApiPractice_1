@@ -3,51 +3,48 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Mapster;
+using Medallion.Threading.Postgres;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
+using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Storage;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Storage;
-using Mirero.DAQ.Test.Custom.Yglee.ApiService.Services.Utils;
 
 namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
 {
-    public interface IImageManagementService
-    {
-        Task<List<Image>> ToListAsync(string dsUri);
-        Task<Image> FindAsync(string dsUri, string id);
-        Task<int> UpdateAsync(string dsUri, string id, Image image);
-        Task<Image?> AddAsync(string dsUri, Image image);
-        Task<Image?> RemoveAsync(string dsUri, string id);
-        void Upload(string dsUri, string id, IFormFile imageFile);
-        Task<byte[]?> GetImageFileAsync(string dsUri, string id);
-    }
-
     public class ImageManagementService : IImageManagementService
     {
-        private readonly IDatasetDbContextFactory _datasetcontextContextFactory;
+        private readonly IDatasetDbContextFactory _dsDbContextFactory;
         private readonly IFileManager _fileManager;
 
-        public ImageManagementService(IDatasetDbContextFactory datasetcontextContextFactory, IFileManager fileManager)
+        public ImageManagementService(IDatasetDbContextFactory dsDbContextFactory, IFileManager fileManager)
         {
-            _datasetcontextContextFactory = datasetcontextContextFactory;
+            _dsDbContextFactory = dsDbContextFactory;
             _fileManager = fileManager;
         }
 
-        public async Task<List<Image>> ToListAsync(string dsUri)
+        public async Task<List<ImageDTO>> ToListAsync(string dsUri)
         {
-            await using var context = _datasetcontextContextFactory.CreateContext(dsUri);
-            return await context.Images.ToListAsync();
+            await using var context = _dsDbContextFactory.CreateContext(dsUri);
+            return await context.Images.Select(i => i.Adapt<ImageDTO>()).ToListAsync();
         }
 
-        public async Task<Image> FindAsync(string dsUri, string id)
+        public async Task<ImageDTO> FindAsync(string dsUri, string id)
         {
-            await using var context = _datasetcontextContextFactory.CreateContext(dsUri);
-            return await context.Images.FindAsync(id);
+            await using var context = _dsDbContextFactory.CreateContext(dsUri);
+            var image = await context.Images.FindAsync(id);
+            return image.Adapt<ImageDTO>();
         }
 
-        public async Task<int> UpdateAsync(string dsUri, string id, Image image)
+        public async Task<int> UpdateAsync(string dsUri, string id, ImageDTO imageDto)
         {
-            await using var context = _datasetcontextContextFactory.CreateContext(dsUri);
+            //var lock = new PostgresDistributedLock(new PostgresAdvisoryLockKey("", allowHashing : true));
+
+            var image = imageDto.Adapt<Image>();
+
+            await using var context = _dsDbContextFactory.CreateContext(dsUri);
             context.Entry(image).State = EntityState.Modified;
 
             try
@@ -69,10 +66,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
             return 1;
         }
 
-        public async Task<Image?> AddAsync(string dsUri, Image image)
+        public async Task<ImageDTO?> AddAsync(string dsUri, ImageDTO imageDto)
         {
-            await using var context = _datasetcontextContextFactory.CreateContext(dsUri);
-            var sample = await context.Samples.FindAsync(image.SampleID);
+            var image = imageDto.Adapt<Image>();
+
+            await using var context = _dsDbContextFactory.CreateContext(dsUri);
+            var sample = await context.Samples.FindAsync(image.SampleId);
             if (sample == null)
             {
                 return null;
@@ -83,21 +82,23 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
 
             await context.SaveChangesAsync();
 
-            return await context.Images
-                .FindAsync(image.ID);
+            image = await context.Images
+                                    .FindAsync(image.Id);
+
+            return image.Adapt<ImageDTO>();
         }
 
-        public async Task<Image?> RemoveAsync(string dsUri, string id)
+        public async Task<ImageDTO?> RemoveAsync(string dsUri, string id)
         {
-            await using var context = _datasetcontextContextFactory.CreateContext(dsUri);
+            await using var context = _dsDbContextFactory.CreateContext(dsUri);
 
             var image = await context.Images.FindAsync(id);
             if (image == null)
             {
-                return image;
+                return null;
             }
 
-            var sample = await context.Samples.FindAsync(image.SampleID);
+            var sample = await context.Samples.FindAsync(image.SampleId);
             if (sample != null) sample.ImageCount--;
 
             context.Images.Remove(image);
@@ -111,7 +112,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
 
             await context.SaveChangesAsync();
 
-            return image;
+            return image.Adapt<ImageDTO>();
         }
 
         public void Upload(string dsUri, string id, IFormFile imageFile)
@@ -150,7 +151,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
             string verifiedId = IdToVerifiedId(id);
             Console.WriteLine($"DownloadImage : {dsUri} {verifiedId}");
             var image = await context.Images.FindAsync(verifiedId);
-            Console.WriteLine($"DownloadImage Find Success : {dsUri} {verifiedId} {image.ID}");
+            Console.WriteLine($"DownloadImage Find Success : {dsUri} {verifiedId} {image.Id}");
 
 
             // 이미지 파일 경로
@@ -166,7 +167,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
 
         private bool ImageExists(DatasetDbContext context, string id)
         {
-            return context.Images.Any(e => e.ID == id);
+            return context.Images.Any(e => e.Id == id);
         }
 
         private string PathToVerifiedPath(string path)

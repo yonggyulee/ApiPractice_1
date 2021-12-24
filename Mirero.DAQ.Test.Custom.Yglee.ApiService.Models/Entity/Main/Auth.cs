@@ -9,13 +9,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main
     public class Auth
     {
         [Key]
-        [Column("id")]
-        public string ID { get; set; }
+        public string Id { get; set; }
         
-        [Column("name")]
         public string Name { get; set; }
         
-        [Column("descriptions")]
         public string? Descriptions { get; set; } = null;
         
         public ICollection<UserAuthMap>? UserAuthMaps { get; set; } = new List<UserAuthMap>();

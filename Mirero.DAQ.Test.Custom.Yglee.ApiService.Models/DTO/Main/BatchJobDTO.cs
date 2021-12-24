@@ -5,7 +5,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main
 {
     public class BatchJobDTO
     {
-        public int ID { get; set; }
+        public int Id { get; set; }
         
         public string Type { get; set; }
         

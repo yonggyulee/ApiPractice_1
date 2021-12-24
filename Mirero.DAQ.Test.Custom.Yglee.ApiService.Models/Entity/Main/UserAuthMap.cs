@@ -9,17 +9,15 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main
     public class UserAuthMap
     {
         [Key]
-        [Column("user_id")]
-        public string UserID { get; set; }
+        public string UserId { get; set; }
         
         [Key]
-        [Column("auth_id")]
-        public string AuthID { get; set; }
+        public string AuthId { get; set; }
         
-        [ForeignKey("UserID")]
+        [ForeignKey("UserId")]
         public User? User { get; set; } = null;
         
-        [ForeignKey("AuthID")]
+        [ForeignKey("AuthId")]
         public Auth? Auth { get; set; } = null;
     }
 }

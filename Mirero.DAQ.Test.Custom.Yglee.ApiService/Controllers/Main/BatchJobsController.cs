@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -17,12 +16,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class BatchJobsController : ControllerBase
     {
         private readonly MainDbContext context;
-        private readonly IMapper _mapper;
 
-        public BatchJobsController(MainDbContext context, IMapper mapper)
+        public BatchJobsController(MainDbContext context)
         {
             this.context = context;
-            _mapper = mapper;
         }
 
         // GET: api/BatchJobs
@@ -30,7 +27,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         public async Task<ActionResult<IEnumerable<BatchJobDTO>>> GetBatchJobs()
         {
             return await context.BatchJobs
-                .Select(b => _mapper.Map<BatchJobDTO>(b))
+                .Select(b => b.Adapt<BatchJobDTO>())
                 .ToListAsync();
         }
 
@@ -45,7 +42,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 return NotFound();
             }
 
-            return _mapper.Map<BatchJobDTO>(batchjob);
+            return batchjob.Adapt<BatchJobDTO>();
         }
 
         // PUT: api/BatchJobs/5
@@ -53,12 +50,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutBatchJob(int id, BatchJobDTO batchjobDto)
         {
-            if (id != batchjobDto.ID)
+            if (id != batchjobDto.Id)
             {
                 return BadRequest();
             }
 
-            var batchjob = _mapper.Map<BatchJob>(batchjobDto);
+            var batchjob = batchjobDto.Adapt<BatchJob>();
 
 
             context.Entry(batchjob).State = EntityState.Modified;
@@ -79,7 +76,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 }
             }
 
-            return Content($"BatchJob is updated.({batchjob.ID})");
+            return Content($"BatchJob is updated.({batchjob.Id})");
         }
 
         // POST: api/BatchJobs
@@ -87,12 +84,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPost]
         public async Task<ActionResult<BatchJobDTO>> PostBatchJob(BatchJobDTO batchJobDto)
         {
-            var batchjob = _mapper.Map<BatchJob>(batchJobDto);
+            var batchjob = batchJobDto.Adapt<BatchJob>();
             
             context.BatchJobs.Add(batchjob);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetBatchJob", new { id = batchjob.ID }, batchJobDto);
+            return CreatedAtAction("GetBatchJob", new { id = batchjob.Id }, batchJobDto);
         }
 
         // DELETE: api/BatchJobs/5
@@ -108,12 +105,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             context.BatchJobs.Remove(batchjob);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetBatchJob", new { id = batchjob.ID }, _mapper.Map<BatchJobDTO>(batchjob));
+            return CreatedAtAction("GetBatchJob", new { id = batchjob.Id }, batchjob.Adapt<BatchJobDTO>());
         }
 
         private bool BatchJobExists(int id)
         {
-            return context.BatchJobs.Any(e => e.ID == id);
+            return context.BatchJobs.Any(e => e.Id == id);
         }
     }
 }

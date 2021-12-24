@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -16,11 +15,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
     [ApiController]
     public class ObjectDetectionsController : ControllerBase
     {
-        private readonly IMapper _mapper;
-
-        public ObjectDetectionsController(IMapper mapper)
+        public ObjectDetectionsController()
         {
-            _mapper = mapper;
         }
 
         // GET: api/ObjectDetections/datasetId
@@ -30,7 +26,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
             return await context.ObjectDetectionLabels
-                .Select(o => _mapper.Map<ObjectDetectionLabelDTO>(o)).ToListAsync();
+                .Select(o => o.Adapt<ObjectDetectionLabelDTO>()).ToListAsync();
         }
         
         // GET: api/ObjectDetections/datasetId/5
@@ -46,7 +42,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 return NotFound();
             }
 
-            return _mapper.Map<ObjectDetectionLabelDTO>(label);
+            return label.Adapt<ObjectDetectionLabelDTO>();
         }
         
         // PUT: api/ObjectDetections/datasetId/5
@@ -54,12 +50,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         public async Task<IActionResult> PutObjectDetectionLabel(string datasetId, int id, ObjectDetectionLabelDTO labelDto)
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
-            if (id != labelDto.ID)
+            if (id != labelDto.Id)
             {
                 return BadRequest();
             }
 
-            var label = _mapper.Map<ObjectDetectionLabel>(labelDto);
+            var label = labelDto.Adapt<ObjectDetectionLabel>();
             
             context.Entry(label).State = EntityState.Modified;
 
@@ -79,7 +75,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 }
             }
 
-            return Content($"ObjectDetectionLabel is updated.({label.ID})");
+            return Content($"ObjectDetectionLabel is updated.({label.Id})");
         }
         
         // POST: api/ObjectDetections/datasetId
@@ -88,19 +84,19 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
-            var img = await context.Images.FindAsync(labelDto.ImageID);
+            var img = await context.Images.FindAsync(labelDto.ImageId);
             if (img == null)
             {
                 return NotFound();
             }
 
-            var label = _mapper.Map<ObjectDetectionLabel>(labelDto);
+            var label = labelDto.Adapt<ObjectDetectionLabel>();
 
             if (img.ObjectDetectionLabels != null) img.ObjectDetectionLabels.Add(label);
 
             await context.SaveChangesAsync();
             
-            return CreatedAtAction("GetObjectDetectionLabel", new { datasetId = datasetId, id = label.ID }, labelDto);
+            return CreatedAtAction("GetObjectDetectionLabel", new { datasetId = datasetId, id = label.Id }, labelDto);
         }
         
         // DELETE: api/ObjectDetections/datasetId/6
@@ -119,12 +115,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             
             await context.SaveChangesAsync();
             
-            return CreatedAtAction("GetObjectDetectionLabel", new { datasetId = datasetId, id = label.ID }, _mapper.Map<ObjectDetectionLabelDTO>(label));
+            return CreatedAtAction("GetObjectDetectionLabel", new { datasetId = datasetId, id = label.Id }, label.Adapt<ObjectDetectionLabelDTO>());
         }
         
         private bool ObjectDetectionExists(DatasetDbContext context, int id)
         {
-            return context.ObjectDetectionLabels.Any(e => e.ID == id);
+            return context.ObjectDetectionLabels.Any(e => e.Id == id);
         }
     }
 }

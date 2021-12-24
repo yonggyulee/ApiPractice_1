@@ -10,6 +10,11 @@ using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main;
 
 namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
 {
+    // TODO PostgreSqlMainDbContext 과 같이 명시적인 이름이 필요할 수도 있습니다 
+    // TODO DbSet<T> 를 담는 BaseMainDbContext 를 만들면...
+    //       - PostgreSqlMainDbContext 
+    //       - SqliteMainDbContext 
+    //      와 같은 구체적 Backend DB 에 대한 설정과 Model Build 를 개별로 관리할 수 있지 않을까요 
     public class MainDbContext : DbContext
     {
         public DbSet<Server> Servers { get; set; } = null!;
@@ -26,8 +31,6 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
         public DbSet<Artifact> Artifacts { get; set; } = null!;
         public DbSet<JobLog> JobLogs { get; set; } = null!;
         
-        
-
         public MainDbContext(DbContextOptions<MainDbContext> options)
             : base(options)
         {
@@ -51,11 +54,11 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
         {
             // modelBuilder.HasPostgresExtension("uuid-ossp");     // Postgresql의 guid 자동 생성 Extension
             // UserAuthMap 테이블 복합 키 설정
-            modelBuilder.Entity<UserAuthMap>().HasKey(table => new {table.UserID, table.AuthID});
+            modelBuilder.Entity<UserAuthMap>().HasKey(table => new {table.UserId, table.AuthId});
 
             // nullable 설정
             modelBuilder.Entity<Server>()
-                .Property(s => s.GPUName)
+                .Property(s => s.GpuName)
                 .IsRequired(false);
             modelBuilder.Entity<Artifact>()
                 .Property(a => a.Descriptions)
@@ -81,22 +84,22 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
 
             // 기본값 설정
             modelBuilder.Entity<Server>()
-                .Property(s => s.GPUCount)
+                .Property(s => s.GpuCount)
                 .HasDefaultValue(0);
             modelBuilder.Entity<Server>()
-                .Property(s => s.GPUMemory)
+                .Property(s => s.GpuMemory)
                 .HasDefaultValue(0);
             modelBuilder.Entity<Worker>()
-                .Property(w => w.GPUCount)
+                .Property(w => w.GpuCount)
                 .HasDefaultValue(0);
             modelBuilder.Entity<Worker>()
-                .Property(w => w.GPUMemory)
+                .Property(w => w.GpuMemory)
                 .HasDefaultValue(0);
             modelBuilder.Entity<Worker>()
-                .Property(w => w.CPUCount)
+                .Property(w => w.CpuCount)
                 .HasDefaultValue(0);
             modelBuilder.Entity<Worker>()
-                .Property(w => w.CPUMemory)
+                .Property(w => w.CpuMemory)
                 .HasDefaultValue(0);
             modelBuilder.Entity<BatchJob>()
                 .Property(b => b.TotalCount)
@@ -137,23 +140,30 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
             // 자동 증가 설정
             // Postgresql DB 사용
             modelBuilder.Entity<ClassCode>()
-                .Property(c => c.ID)
+                .Property(c => c.Id)
                 .ValueGeneratedOnAdd();  
             modelBuilder.Entity<Artifact>()
-                .Property(c => c.ID)
+                .Property(c => c.Id)
                 .ValueGeneratedOnAdd(); 
             modelBuilder.Entity<BatchJob>()
-                .Property(c => c.ID)
+                .Property(c => c.Id)
                 .ValueGeneratedOnAdd(); 
             modelBuilder.Entity<Dataset>()
-                .Property(c => c.ID)
+                .Property(c => c.Id)
                 .ValueGeneratedOnAdd(); 
             modelBuilder.Entity<Job>()
-                .Property(c => c.ID)
+                .Property(c => c.Id)
                 .ValueGeneratedOnAdd();
             modelBuilder.Entity<JobLog>()
-                .Property(c => c.ID)
+                .Property(c => c.Id)
                 .ValueGeneratedOnAdd(); 
+        }
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // TODO 아래 코드는 EF Core로 하여금 Table 및 Column 명칭을 C# Keyword 로 부터 유추할 경우, Snake Casing을 강제합니다. Postgresql의 경우 이렇게 하면 어떤점이 좋을까요
+            // (ref: https://www.npgsql.org/efcore/modeling/table-column-naming.html)
+            // optionsBuilder.UseSnakeCaseNamingConvention();
         }
     }
 }

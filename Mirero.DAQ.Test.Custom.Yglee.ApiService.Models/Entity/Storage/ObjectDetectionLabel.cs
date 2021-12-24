@@ -9,28 +9,23 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Storage
     public class ObjectDetectionLabel
     {
         [Key]
-        [Column("id")]
-        public int ID { get; set; }
+        public int Id { get; set; }
         
-        [Column("label_set_id")]
-        public string LabelSetID { get; set; }
+        public string LabelSetId { get; set; }
         
-        [Column("sample_id")]
-        public string SampleID { get; set; }
+        public string SampleId { get; set; }
         
-        [Column("image_id")]
-        public string ImageID { get; set; }
+        public string ImageId { get; set; }
         
-        [Column("label_path")]
         public string LabelPath { get; set; }       // json path
         
-        [ForeignKey("LabelSetID")]
+        [ForeignKey("LabelSetId")]
         public LabelSet? LabelSet { get; set; } = null;
         
-        [ForeignKey("SampleID")]
+        [ForeignKey("SampleId")]
         public Sample? Sample { get; set; } = null;
         
-        [ForeignKey("ImageID")]
+        [ForeignKey("ImageId")]
         public Image? Image { get; set; } = null;
     }
 }

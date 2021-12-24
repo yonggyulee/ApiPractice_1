@@ -5,9 +5,9 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Storage
 {
     public class ImageDTO
     {
-        public string ID { get; set; }
+        public string Id { get; set; }
         
-        public string SampleID { get; set; }
+        public string SampleId { get; set; }
         
         public string ImageCode { get; set; }
 

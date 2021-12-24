@@ -1,13 +1,10 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
-using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Storage;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Storage;
 
@@ -17,11 +14,9 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
     [ApiController]
     public class ClassificationsController : ControllerBase
     {
-        private readonly IMapper _mapper;
 
-        public ClassificationsController(IMapper mapper)
+        public ClassificationsController()
         {
-            _mapper = mapper;
         }
 
         // GET: api/Classifications/datasetId
@@ -31,7 +26,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
             return await context.ClassificationLabels
-                .Select(c => _mapper.Map<ClassificationLabelDTO>(c))
+                .Select(c => c.Adapt<ClassificationLabelDTO>())
                 .ToListAsync();
         }
         
@@ -39,6 +34,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         [HttpGet("{datasetId}/{id}")]
         public async Task<ActionResult<ClassificationLabelDTO>> GetClassificationLabel(string datasetId, int id)
         {
+            // TODO 아래 구현을  IIMageManagementService 처럼 서비스 내로 이동하면 어떤 점이 좋아지는가
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
             var label = await context.ClassificationLabels.FindAsync(id);
@@ -48,7 +44,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 return NotFound();
             }
 
-            return _mapper.Map<ClassificationLabelDTO>(label);
+            return label.Adapt<ClassificationLabelDTO>();
         }
         
         // PUT: api/Classifications/datasetId/5
@@ -57,12 +53,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
             
-            if (id != labelDto.ID)
+            if (id != labelDto.Id)
             {
                 return BadRequest();
             }
 
-            var label = _mapper.Map<ClassificationLabel>(labelDto);
+            var label = labelDto.Adapt<ClassificationLabelDTO>();
             
             context.Entry(label).State = EntityState.Modified;
 
@@ -82,7 +78,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 }
             }
 
-            return Content($"ClassificationLabel is updated.({label.ID})");
+            return Content($"ClassificationLabel is updated.({label.Id})");
         }
         
         // POST: api/Classifications/datasetId
@@ -91,20 +87,20 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
-            var img = await context.Images.FindAsync(labelDto.ImageID);
+            var img = await context.Images.FindAsync(labelDto.ImageId);
             
             if (img == null)
             {
                 return NotFound();
             }
             
-            var label = _mapper.Map<ClassificationLabel>(labelDto);
+            var label = labelDto.Adapt<ClassificationLabel>();
 
             if (img.ClassificationLabels != null) img.ClassificationLabels.Add(label);
 
             await context.SaveChangesAsync();
             
-            return CreatedAtAction("GetClassificationLabel", new { datasetId = datasetId, id = label.ID }, label);
+            return CreatedAtAction("GetClassificationLabel", new { datasetId = datasetId, id = label.Id }, label);
         }
         
         // DELETE: api/Classifications/datasetId/6
@@ -123,12 +119,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             
             await context.SaveChangesAsync();
             
-            return CreatedAtAction("GetClassificationLabel", new { datasetId = datasetId, id = label.ID }, _mapper.Map<ClassificationLabelDTO>(label));
+            return CreatedAtAction("GetClassificationLabel", new { datasetId = datasetId, id = label.Id }, label.Adapt<ClassificationLabelDTO>());
         }
         
         private bool ClassificationExists(DatasetDbContext context, int id)
         {
-            return context.ClassificationLabels.Any(e => e.ID == id);
+            return context.ClassificationLabels.Any(e => e.Id == id);
         }
     }
 }

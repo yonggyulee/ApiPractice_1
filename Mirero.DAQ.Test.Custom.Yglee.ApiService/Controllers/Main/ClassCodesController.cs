@@ -1,7 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -15,12 +16,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class ClassCodesController : ControllerBase
     {
         private readonly MainDbContext context;
-        private readonly IMapper _mapper;
 
-        public ClassCodesController(MainDbContext context, IMapper mapper)
+        public ClassCodesController(MainDbContext context)
         {
             this.context = context;
-            _mapper = mapper;
         }
 
         // GET: api/ClassCodes
@@ -28,7 +27,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         public async Task<ActionResult<IEnumerable<ClassCodeDTO>>> GetClassCodes()
         {
             return await context.ClassCodes
-                .Select(c => _mapper.Map<ClassCodeDTO>(c))
+                .Select(c => c.Adapt<ClassCodeDTO>())
                 .ToListAsync();
             // return await context.ClassCodes.ToListAsync();
         }
@@ -44,7 +43,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 return NotFound();
             }
 
-            return _mapper.Map<ClassCodeDTO>(classcode);
+            return classcode.Adapt<ClassCodeDTO>();
         }
 
         // PUT: api/ClassCodes/5
@@ -52,12 +51,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutClassCode(int id, ClassCodeDTO classCodeDto)
         {
-            if (id != classCodeDto.ID)
+            if (id != classCodeDto.Id)
             {
                 return BadRequest();
             }
 
-            var classcode = _mapper.Map<ClassCode>(classCodeDto);
+            var classcode = classCodeDto.Adapt<ClassCode>();
             
             context.Entry(classcode).State = EntityState.Modified;
 
@@ -77,7 +76,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 }
             }
 
-            return Content($"ClassCode is updated.({classcode.ID})");
+            return Content($"ClassCode is updated.({classcode.Id})");
         }
 
         // POST: api/ClassCodes
@@ -85,12 +84,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPost]
         public async Task<ActionResult<ClassCodeDTO>> PostClassCode(ClassCodeDTO classCodeDto)
         {
-            var classcode = _mapper.Map<ClassCode>(classCodeDto);
+            var classcode = classCodeDto.Adapt<ClassCode>();
             
             context.ClassCodes.Add(classcode);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetClassCode", new { id = classcode.ID }, classCodeDto);
+            return CreatedAtAction("GetClassCode", new { id = classcode.Id }, classCodeDto);
         }
 
         // DELETE: api/ClassCodes/5
@@ -106,12 +105,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             context.ClassCodes.Remove(classcode);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetClassCode", new { id = classcode.ID }, _mapper.Map<ClassCodeDTO>(classcode));
+            return CreatedAtAction("GetClassCode", new { id = classcode.Id }, classcode.Adapt<ClassCodeDTO>());
         }
 
         private bool ClassCodeExists(int id)
         {
-            return context.ClassCodes.Any(e => e.ID == id);
+            return context.ClassCodes.Any(e => e.Id == id);
         }
     }
 }

@@ -48,7 +48,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
         
         protected override void OnConfiguring(DbContextOptionsBuilder options)
         {
-            if (ConnectionString != null) options.UseSqlite(ConnectionString);
+            if (ConnectionString != null) options.UseSqlite(ConnectionString).UseSnakeCaseNamingConvention();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -57,13 +57,13 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
             
             // id 자동 증가
             modelBuilder.Entity<ClassificationLabel>()
-                .Property(c => c.ID)
+                .Property(c => c.Id)
                 .ValueGeneratedOnAdd();
             modelBuilder.Entity<ObjectDetectionLabel>()
-                .Property(o => o.ID)
+                .Property(o => o.Id)
                 .ValueGeneratedOnAdd();
             modelBuilder.Entity<SegmentationLabel>()
-                .Property(s => s.ID)
+                .Property(s => s.Id)
                 .ValueGeneratedOnAdd();
 
             // nullabel 설정
@@ -75,17 +75,6 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Context
             modelBuilder.Entity<Sample>()
                 .Property(s => s.ImageCount)
                 .HasDefaultValue(0);
-            
-            // guid 자동 생성 설정
-            // modelBuilder.Entity<ClassificationLabel>()
-            //     .Property(c => c.ID)
-            //     .HasDefaultValueSql("uuid()"); 
-            // modelBuilder.Entity<ObjectDetectionLabel>()
-            //     .Property(o => o.ID)
-            //     .HasDefaultValueSql("uuid()");
-            // modelBuilder.Entity<SegmentationLabel>()
-            //     .Property(s => s.ID)
-            //     .HasDefaultValueSql("uuid()");
         }
         
         // 데이터베이스 위치 경로 반환.

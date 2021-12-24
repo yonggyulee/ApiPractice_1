@@ -9,22 +9,17 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main
     public class ClassCode
     {
         [Key]
-        [Column("id")]
-        public int ID { get; set; }                    // auto generation
+        public int Id { get; set; }                    // auto generation
         
-        [Column("class_code")]
         public string Class_Code { get; set; }
         
-        [Column("name")]
         public string Name { get; set; }
         
-        [Column("info")]
         public string Info { get; set; }                // json
         
-        [Column("class_code_set_id")]
-        public string ClassCodeSetID { get; set; }
+        public string ClassCodeSetId { get; set; }
         
-        [ForeignKey("ClassCodeSetID")]
+        [ForeignKey("ClassCodeSetId")]
         public ClassCodeSet? ClassCodeSet { get; set; } = null;
     }
 }

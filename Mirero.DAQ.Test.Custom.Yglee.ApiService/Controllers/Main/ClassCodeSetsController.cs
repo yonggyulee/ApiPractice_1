@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -17,12 +17,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class ClassCodeSetsController : ControllerBase
     {
         private readonly MainDbContext context;
-        private readonly IMapper _mapper;
 
-        public ClassCodeSetsController(MainDbContext context, IMapper mapper)
+        public ClassCodeSetsController(MainDbContext context)
         {
             this.context = context;
-            _mapper = mapper;
         }
 
         // GET: api/ClassCodeSets
@@ -30,7 +28,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         public async Task<ActionResult<IEnumerable<ClassCodeSetDTO>>> GetClassCodeSets()
         {
             return await context.ClassCodeSets
-                .Select(c => _mapper.Map<ClassCodeSetDTO>(c))
+                .Select(c => c.Adapt<ClassCodeSetDTO>())
                 .ToListAsync();
         }
 
@@ -45,7 +43,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 return NotFound();
             }
 
-            return _mapper.Map<ClassCodeSetDTO>(classcodeset);
+            return classcodeset.Adapt<ClassCodeSetDTO>();
         }
 
         // PUT: api/ClassCodeSets/5
@@ -53,7 +51,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutClassCodeSet(string id, ClassCodeSetDTO classCodeSetDto)
         {
-            if (id != classCodeSetDto.ID)
+            if (id != classCodeSetDto.Id)
             {
                 return BadRequest();
             }
@@ -61,7 +59,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             // 수정된 시간
             classCodeSetDto.UpdatedAt = DateTime.Now;
 
-            var classcodeset = _mapper.Map<ClassCodeSet>(classCodeSetDto);
+            var classcodeset = classCodeSetDto.Adapt<ClassCodeSet>();
             
             context.Entry(classcodeset).State = EntityState.Modified;
 
@@ -81,7 +79,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 }
             }
 
-            return Content($"ClassCodeSet is updated.({classcodeset.ID})");
+            return Content($"ClassCodeSet is updated.({classcodeset.Id})");
         }
 
         // POST: api/ClassCodeSets
@@ -89,12 +87,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPost]
         public async Task<ActionResult<ClassCodeSetDTO>> PostClassCodeSet(ClassCodeSetDTO classCodeSetDto)
         {
-            var classcodeset = _mapper.Map<ClassCodeSet>(classCodeSetDto);
+            var classcodeset = classCodeSetDto.Adapt<ClassCodeSet>();
             
             context.ClassCodeSets.Add(classcodeset);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetClassCodeSet", new { id = classcodeset.ID }, classCodeSetDto);
+            return CreatedAtAction("GetClassCodeSet", new { id = classcodeset.Id }, classCodeSetDto);
         }
 
         // DELETE: api/ClassCodeSets/5
@@ -110,12 +108,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             context.ClassCodeSets.Remove(classcodeset);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetClassCodeSet", new { id = classcodeset.ID }, _mapper.Map<ClassCodeSetDTO>(classcodeset));
+            return CreatedAtAction("GetClassCodeSet", new { id = classcodeset.Id }, classcodeset.Adapt<ClassCodeSetDTO>());
         }
 
         private bool ClassCodeSetExists(string id)
         {
-            return context.ClassCodeSets.Any(e => e.ID == id);
+            return context.ClassCodeSets.Any(e => e.Id == id);
         }
     }
 }

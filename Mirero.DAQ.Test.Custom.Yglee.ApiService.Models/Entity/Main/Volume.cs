@@ -9,19 +9,14 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main
     public class Volume
     {
         [Key]
-        [Column("id")]
-        public string ID { get; set; }
+        public string Id { get; set; }
         
-        [Column("uri")]
-        public string URI { get; set; }
+        public string Uri { get; set; }
         
-        [Column("type")]
         public string Type { get; set; }
         
-        [Column("usage")]
         public int Usage { get; set; }      // KB
         
-        [Column("capacity")]
         public int Capacity { get; set; }   // KB
 
         public ICollection<Dataset>? Datasets { get; set; } = new List<Dataset>();

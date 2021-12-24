@@ -1,9 +1,7 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -17,12 +15,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class AuthsController : ControllerBase
     {
         private readonly MainDbContext context;
-        private readonly IMapper _mapper;
 
-        public AuthsController(MainDbContext context, IMapper mapper)
+        public AuthsController(MainDbContext context)
         {
             this.context = context;
-            _mapper = mapper;
         }
 
         // GET: api/Auths
@@ -30,7 +26,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         public async Task<ActionResult<IEnumerable<AuthDTO>>> GetAuths()
         {
             return await context.Auths
-                .Select(a => _mapper.Map<AuthDTO>(a))
+                .Select(a => a.Adapt<AuthDTO>())
                 .ToListAsync();
         }
 
@@ -45,7 +41,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 return NotFound();
             }
 
-            return _mapper.Map<AuthDTO>(auth);
+            return auth.Adapt<AuthDTO>();
         }
 
         // PUT: api/Auths/5
@@ -53,12 +49,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutAuth(string id, AuthDTO authDto)
         {
-            if (id != authDto.ID)
+            if (id != authDto.Id)
             {
                 return BadRequest();
             }
 
-            var auth = _mapper.Map<Auth>(authDto);
+            var auth = authDto.Adapt<Auth>();
             
             context.Entry(auth).State = EntityState.Modified;
 
@@ -78,7 +74,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 }
             }
 
-            return Content($"Auth is updated.({auth.ID})");
+            return Content($"Auth is updated.({auth.Id})");
         }
 
         // POST: api/Auths
@@ -86,12 +82,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPost]
         public async Task<ActionResult<AuthDTO>> PostAuth(AuthDTO authDto)
         {
-            var auth = _mapper.Map<Auth>(authDto);
+            var auth = authDto.Adapt<Auth>();
 
             context.Auths.Add(auth);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAuth", new { id = auth.ID }, authDto);
+            return CreatedAtAction("GetAuth", new { id = auth.Id }, authDto);
         }
 
         // DELETE: api/Auths/5
@@ -107,12 +103,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             context.Auths.Remove(auth);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetAuth", new { id = auth.ID }, _mapper.Map<AuthDTO>(auth));
+            return CreatedAtAction("GetAuth", new { id = auth.Id }, auth.Adapt<AuthDTO>());
         }
 
         private bool AuthExists(string id)
         { 
-            return context.Auths.Any(e => e.ID == id);
+            return context.Auths.Any(e => e.Id == id);
         }
     }
 }

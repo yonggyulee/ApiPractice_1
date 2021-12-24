@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -16,11 +15,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
     [ApiController]
     public class SegmentationsController : ControllerBase
     {
-        private readonly IMapper _mapper;
-
-        public SegmentationsController(IMapper mapper)
+        public SegmentationsController()
         {
-            _mapper = mapper;
         }
 
         // GET: api/Segmentations/datasetId
@@ -30,7 +26,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
             return await context.SegmentationLabels
-                .Select(s => _mapper.Map<SegmentationLabelDTO>(s)).ToListAsync();
+                .Select(s => s.Adapt<SegmentationLabelDTO>()).ToListAsync();
         }
         
         // GET: api/Segmentations/datasetId/5
@@ -46,7 +42,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 return NotFound();
             }
 
-            return _mapper.Map<SegmentationLabelDTO>(label);
+            return label.Adapt<SegmentationLabelDTO>();
         }
         
         // PUT: api/Segmentations/datasetId/5
@@ -54,12 +50,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         public async Task<IActionResult> PutSegmentationLabel(string datasetId, int id, SegmentationLabelDTO labelDto)
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
-            if (id != labelDto.ID)
+            if (id != labelDto.Id)
             {
                 return BadRequest();
             }
 
-            var label = _mapper.Map<SegmentationLabel>(labelDto);
+            var label = labelDto.Adapt<SegmentationLabel>();
             
             context.Entry(label).State = EntityState.Modified;
 
@@ -79,7 +75,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 }
             }
 
-            return Content($"SegmentationLabel is updated.({label.ID})");
+            return Content($"SegmentationLabel is updated.({label.Id})");
         }
         
         // POST: api/Segmentations/datasetId
@@ -88,19 +84,19 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
-            var img = await context.Images.FindAsync(labelDto.ImageID);
+            var img = await context.Images.FindAsync(labelDto.ImageId);
             if (img == null)
             {
                 return NotFound();
             }
 
-            var label = _mapper.Map<SegmentationLabel>(labelDto);
+            var label = labelDto.Adapt<SegmentationLabel>();
 
             if (img.SegmentationLabels != null) img.SegmentationLabels.Add(label);
 
             await context.SaveChangesAsync();
             
-            return CreatedAtAction("GetSegmentationLabel", new { datasetId = datasetId, id = label.ID }, labelDto);
+            return CreatedAtAction("GetSegmentationLabel", new { datasetId = datasetId, id = label.Id }, labelDto);
         }
         
         // DELETE: api/Segmentations/datasetId/6
@@ -119,12 +115,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             
             await context.SaveChangesAsync();
             
-            return CreatedAtAction("GetSegmentationLabel", new { datasetId = datasetId, id = label.ID }, _mapper.Map<SegmentationLabelDTO>(label));
+            return CreatedAtAction("GetSegmentationLabel", new { datasetId = datasetId, id = label.Id }, label.Adapt<SegmentationLabelDTO>());
         }
         
         private bool SegmentationExists(DatasetDbContext context, int id)
         {
-            return context.SegmentationLabels.Any(e => e.ID == id);
+            return context.SegmentationLabels.Any(e => e.Id == id);
         }
     }
 }

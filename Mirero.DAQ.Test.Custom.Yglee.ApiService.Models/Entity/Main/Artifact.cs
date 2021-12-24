@@ -10,27 +10,22 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main
     public class Artifact
     {
         [Key]
-        [Column("id")]
-        public int ID { get; set; }                // auto generation
+        public int Id { get; set; }                // auto generation
         
-        [Column("job_id")]
-        public int JobID { get; set; }
+        public int JobId { get; set; }
         
-        [Column("name")]
         public string Name { get; set; }
         
-        [Column("volume_id")]
-        public string VolumeID { get; set; }
+        public string VolumeId { get; set; }
         
-        [Column("uri")]
-        public string URI { get; set; }
+        public string Uri { get; set; }
 
-        [Column("descriptions")] public string? Descriptions { get; set; } = null;
+        public string? Descriptions { get; set; } = null;
         
-        [ForeignKey("JobID")]
+        [ForeignKey("JobId")]
         public Job? Job { get; set; } = null;
         
-        [ForeignKey("VolumeID")]
+        [ForeignKey("VolumeId")]
         public Volume? Volume { get; set; } = null;
     }
 }

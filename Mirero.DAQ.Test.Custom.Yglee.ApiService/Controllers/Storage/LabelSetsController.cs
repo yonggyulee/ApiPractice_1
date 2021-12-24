@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
@@ -16,7 +15,6 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
     [ApiController]
     public class LabelSetsController : ControllerBase
     {
-        private readonly IMapper _mapper;
         // private readonly DatasetDbContext context;
         //
         // public LabelSetsController(DatasetDbContext context)
@@ -24,9 +22,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         //     this.context = context;
         // }
 
-        public LabelSetsController(IMapper mapper)
+        public LabelSetsController()
         {
-            _mapper = mapper;
         }
 
         // GET: api/LabelSets/datasetId
@@ -36,7 +33,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
             return await context.LabelSets
-                .Select(l => _mapper.Map<LabelSetDTO>(l))
+                .Select(l => l.Adapt<LabelSetDTO>())
                 .ToListAsync();
         }
 
@@ -53,7 +50,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 return NotFound();
             }
 
-            return _mapper.Map<LabelSetDTO>(labelset);
+            return labelset.Adapt<LabelSetDTO>();
         }
 
         // PUT: api/LabelSets/datasetId/5
@@ -62,12 +59,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         public async Task<IActionResult> PutLabelSet(string datasetId, string id, LabelSetDTO labelSetDto)
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
-            if (id != labelSetDto.ID)
+            if (id != labelSetDto.Id)
             {
                 return BadRequest();
             }
 
-            var labelset = _mapper.Map<LabelSet>(labelSetDto);
+            var labelset = labelSetDto.Adapt<LabelSet>();
             
             context.Entry(labelset).State = EntityState.Modified;
 
@@ -87,7 +84,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
                 }
             }
 
-            return Content($"LabelSet is updated.({labelset.ID})");
+            return Content($"LabelSet is updated.({labelset.Id})");
         }
 
         // POST: api/LabelSets/datasetId
@@ -97,12 +94,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
         {
             await using var context = DatasetDbContext.GetInstance(datasetId);
 
-            var labelset = _mapper.Map<LabelSet>(labelSetDto);
+            var labelset = labelSetDto.Adapt<LabelSet>();
             
             context.LabelSets.Add(labelset);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetLabelSet", new { datasetId = datasetId, id = labelset.ID }, labelSetDto);
+            return CreatedAtAction("GetLabelSet", new { datasetId = datasetId, id = labelset.Id }, labelSetDto);
         }
 
         // DELETE: api/LabelSets/datasetId/5
@@ -120,12 +117,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Storage
             context.LabelSets.Remove(labelSet);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetLabelSet", new { datasetId = datasetId, id = labelSet.ID }, _mapper.Map<LabelSetDTO>(labelSet));
+            return CreatedAtAction("GetLabelSet", new { datasetId = datasetId, id = labelSet.Id }, labelSet.Adapt<LabelSetDTO>());
         }
 
         private bool LabelSetExists(DatasetDbContext context, string id)
         {
-            return context.LabelSets.Any(e => e.ID == id);
+            return context.LabelSets.Any(e => e.Id == id);
         }
     }
 }

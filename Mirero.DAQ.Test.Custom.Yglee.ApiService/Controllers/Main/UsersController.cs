@@ -1,13 +1,11 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Mapster;
+using MapsterMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
-using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main;
 
@@ -18,12 +16,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
     public class UsersController : ControllerBase
     {
         private readonly MainDbContext context;
-        private readonly IMapper _mapper;
 
-        public UsersController(MainDbContext context, IMapper mapper)
+        public UsersController(MainDbContext context)
         {
             this.context = context;
-            _mapper = mapper;
         }
 
         // GET: api/Users
@@ -31,7 +27,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         public async Task<ActionResult<IEnumerable<UserDTO>>> GetUsers()
         {
             return await context.Users
-                .Select(u => _mapper.Map<UserDTO>(u))
+                .Select(u => u.Adapt<UserDTO>())
                 .ToListAsync();
 
             // return await context.Users
@@ -50,7 +46,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 return NotFound();
             }
 
-            return _mapper.Map<UserDTO>(user);
+            return user.Adapt<UserDTO>();
         }
 
         // PUT: api/Users/5
@@ -58,12 +54,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPut("{id}")]
         public async Task<IActionResult> PutUser(string id, UserDTO userDto)
         {
-            if (id != userDto.ID)
+            if (id != userDto.Id)
             {
                 return BadRequest();
             }
 
-            var user = _mapper.Map<User>(userDto);
+            var user = userDto.Adapt<User>();
             
             context.Entry(user).State = EntityState.Modified;
 
@@ -83,7 +79,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
                 }
             }
 
-            return Content($"User is updated.({user.ID})");
+            return Content($"User is updated.({user.Id})");
         }
 
         // POST: api/Users
@@ -91,12 +87,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpPost]
         public async Task<ActionResult<UserDTO>> PostUser(UserDTO userDto)
         {
-            var user = _mapper.Map<User>(userDto);
+            var user = userDto.Adapt<User>();
             
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = user.ID }, userDto);
+            return CreatedAtAction("GetUser", new { id = user.Id }, userDto);
         }
 
         // DELETE: api/Users/5
@@ -112,12 +108,12 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
             context.Users.Remove(user);
             await context.SaveChangesAsync();
 
-            return CreatedAtAction("GetUser", new { id = user.ID }, _mapper.Map<UserDTO>(user));
+            return CreatedAtAction("GetUser", new { id = user.Id }, user.Adapt<UserDTO>());
         }
 
         private bool UserExists(string id)
         {
-            return context.Users.Any(e => e.ID == id);
+            return context.Users.Any(e => e.Id == id);
         }
     }
 }

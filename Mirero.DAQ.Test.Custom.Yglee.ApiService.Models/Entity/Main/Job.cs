@@ -11,28 +11,21 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main
     public class Job
     {
         [Key]
-        [Column("id")]
-        public int ID { get; set; }                    // auto generation
+        public int Id { get; set; }                    // auto generation
         
-        [Column("batch_job_id")]
-        public int BatchJobID { get; set; }
+        public int BatchJobId { get; set; }
         
-        [Column("worker_id")]
-        public string WorkerID { get; set; }
+        public string WorkerId { get; set; }
         
-        [Column("status")]
         public string Status { get; set; }
         
-        [Column("ready_start")]
         public DateTime? ReadyStart { get; set; } = null;
         
-        [Column("progress_start")]
         public DateTime? ProgressStart { get; set; } = null;
         
-        [Column("progress_end")]
         public DateTime? ProgressEnd { get; set; } = null;
         
-        [ForeignKey("BatchJobID")]
+        [ForeignKey("BatchJobId")]
         public BatchJob? BatchJob { get; set; } = null;
 
         public ICollection<Artifact>? Artifacts { get; set; } = new List<Artifact>();
