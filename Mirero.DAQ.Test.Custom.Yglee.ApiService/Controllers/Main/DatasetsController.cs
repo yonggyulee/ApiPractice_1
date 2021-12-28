@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Mapster;
 using MapsterMapper;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main;
@@ -27,6 +28,10 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DatasetDTO>>> GetDatasets()
         {
+            Console.WriteLine(Request.GetDisplayUrl());
+
+            Console.WriteLine(Request.Path.Value);
+
             return await _dsService.ToListAsync();
         }
 

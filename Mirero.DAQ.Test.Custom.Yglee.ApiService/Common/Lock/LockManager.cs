@@ -9,6 +9,21 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Utils
 {
     public class LockManager : ILockManager
     {
+        private AdvisoryLock _lock;
 
+        public async Task AcquireAsync()
+        {
+
+        }
+
+        public async Task TryAcquireAsync()
+        {
+
+        }
+
+        public void SetLock(string name)
+        {
+            _lock = new AdvisoryLock(new AdvisoryLockKey(name, allowHashing: true));
+        }
     }
 }

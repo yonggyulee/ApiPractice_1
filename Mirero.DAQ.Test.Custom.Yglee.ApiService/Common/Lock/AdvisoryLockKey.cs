@@ -45,6 +45,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Lock
 
         internal long Key => this._key;
 
+        internal (int key1, int key2) Keys => SplitKeys(this._key);
+
         public bool Equals(AdvisoryLockKey that) => this.ToTuple().Equals(that.ToTuple());
 
         public override bool Equals(object obj) => obj is AdvisoryLockKey that && this.Equals(that);
@@ -63,6 +65,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Lock
             KeyEncoding.Ascii => ToAsciiString(this._key),
             _ => throw new InvalidOperationException()
         };
+
+        private static (int key1, int key2) SplitKeys(long key) => ((int)(key >> (8 * sizeof(int))), unchecked((int)(key & uint.MaxValue)));
 
         #region ---- Ascii ----
         // ASCII 인코딩은 동작 설명.
