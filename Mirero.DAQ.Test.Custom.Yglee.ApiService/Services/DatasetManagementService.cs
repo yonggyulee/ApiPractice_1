@@ -8,6 +8,7 @@ using Medallion.Threading.Postgres;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces;
+using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Utils;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Context;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main;
@@ -20,6 +21,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
         private readonly MainDbContext _context;
         private readonly IDirectoryManager _directoryManager;
         private readonly IConfiguration _configuration;
+        private readonly ILockManager _lockManager;
 
         public DatasetManagementService(IDatasetDbContextFactory dsDbContextFactory, MainDbContext context, IDirectoryManager directoryManager, IConfiguration configuration)
         {
@@ -27,6 +29,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
             _context = context;
             _directoryManager = directoryManager;
             _configuration = configuration;
+            _lockManager = new LockManager();
         }
 
         public async Task<DatasetDTO> CreateDatasetAsync(DatasetDTO datasetDto)
@@ -97,9 +100,27 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
             return dataset.Adapt<DatasetDTO>();
         }
 
-        public async Task<List<DatasetDTO>> ToListAsync()
+        public async Task<List<DatasetDTO>> ToListAsync(string uri)
         {
+            var timeout = int.Parse(_configuration["LockTimeout"]);
+            using var handle = _lockManager.Acquire(uri, _context, TimeSpan.FromMilliseconds(timeout));
+            
+            if (handle == null)
+            {
+                Console.WriteLine("lock already using.");
+                return new List<DatasetDTO>();
+            }
+
             return await _context.Datasets.Select(d => d.Adapt<DatasetDTO>()).ToListAsync();
+
+            //var @lock = new PostgresDistributedLock(new PostgresAdvisoryLockKey(uri, allowHashing: true),
+            //    _configuration.GetConnectionString("MainDatabase"));
+
+            //using (var handle = await @lock.TryAcquireAsync())
+            //{
+            //    Console.WriteLine("handle is " + (handle == null ? "real null." : "not null"));
+            //    return await _context.Datasets.Select(d => d.Adapt<DatasetDTO>()).ToListAsync();
+            //}
         }
 
         public async Task<DatasetDTO?> FindAsync(int id)
@@ -111,25 +132,51 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Services
 
         public async Task<int> UpdateDataset(int id, DatasetDTO datasetDto)
         {
-            var dataset = datasetDto.Adapt<Dataset>();
-            _context.Entry(dataset).State = EntityState.Modified;
+            var @lock = new PostgresDistributedLock(new PostgresAdvisoryLockKey("/api/datasets/1", allowHashing: true),
+                _configuration.GetConnectionString("MainDatabase"));
 
-            try
+            using (await @lock.TryAcquireAsync())
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!DatasetExists(id))
+                var dataset = datasetDto.Adapt<Dataset>();
+                _context.Entry(dataset).State = EntityState.Modified;
+
+                try
                 {
-                    return 0;
+                    await _context.SaveChangesAsync();
                 }
-                else
+                catch (DbUpdateConcurrencyException)
                 {
-                    return -1;
+                    if (!DatasetExists(id))
+                    {
+                        return 0;
+                    }
+                    else
+                    {
+                        return -1;
+                    }
                 }
+                return 1;
             }
-            return 1;
+
+            //var dataset = datasetDto.Adapt<Dataset>();
+            //_context.Entry(dataset).State = EntityState.Modified;
+
+            //try
+            //{
+            //    await _context.SaveChangesAsync();
+            //}
+            //catch (DbUpdateConcurrencyException)
+            //{
+            //    if (!DatasetExists(id))
+            //    {
+            //        return 0;
+            //    }
+            //    else
+            //    {
+            //        return -1;
+            //    }
+            //}
+            //return 1;
         }
 
         private bool DatasetExists(int id)

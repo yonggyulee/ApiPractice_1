@@ -8,7 +8,7 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces
     {
         Task<DatasetDTO> CreateDatasetAsync(DatasetDTO dataset);
         Task<DatasetDTO?> RemoveDatasetAsync(int id);
-        Task<List<DatasetDTO>> ToListAsync();
+        Task<List<DatasetDTO>> ToListAsync(string uri);
         Task<DatasetDTO?> FindAsync(int id);
         Task<int> UpdateDataset(int id, DatasetDTO dataset);
     }

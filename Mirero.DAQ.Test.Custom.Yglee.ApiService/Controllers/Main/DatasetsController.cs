@@ -7,6 +7,7 @@ using MapsterMapper;
 using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Interfaces;
+using Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Utils;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.DTO.Main;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Models.Entity.Main;
 using Mirero.DAQ.Test.Custom.Yglee.ApiService.Services;
@@ -32,7 +33,11 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Controllers.Main
 
             Console.WriteLine(Request.Path.Value);
 
-            return await _dsService.ToListAsync();
+            var value = Request.Path.Value ?? "";
+
+            Console.WriteLine(value);
+
+            return await _dsService.ToListAsync(value);
         }
 
         // GET: api/Datasets/5

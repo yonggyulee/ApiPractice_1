@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
+using Npgsql;
 
 namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Lock
 {
@@ -15,36 +18,60 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Lock
         private const int AlreadyHeldReturnCode = 103;
 
         private readonly AdvisoryLockKey _key;
+        private readonly DbContext _context;
         private readonly bool _isShared;
 
 
-        public AdvisoryLock(AdvisoryLockKey key, bool isShared = false)
+        public AdvisoryLock(AdvisoryLockKey key, DbContext context , bool isShared = false)
         {
             _key = key;
+            _context = context;
             _isShared = isShared;
         }
 
-        public async ValueTask<object?> TryAcquire(DbContext context, TimeSpan timeout)
+        public async ValueTask<object?> TryAcquire(TimeSpan timeout = new TimeSpan())
         {
-            await using var conn = context.Database.GetDbConnection();
-            await context.Database.OpenConnectionAsync();
+            var conn = _context.Database.GetDbConnection();
+            await _context.Database.OpenConnectionAsync();
 
-            using var acquireCommand = this.CreateAcquireCommand(conn);
+            await using var acquireCommand = this.CreateAcquireCommand(conn, timeout);
 
-            int acquireCommandResult = 0;
+            var acquireCommandResult = 0;
             try
             {
-                acquireCommandResult = (int)await acquireCommand.ExecuteScalarAsync();
+                acquireCommandResult = (int)(await acquireCommand.ExecuteScalarAsync() ?? 0);
             }
             catch (Exception ex)
             {
-                
+                if (ex is PostgresException postgresException)
+                {
+                    switch (postgresException.SqlState)
+                    {
+                        // lock_timeout error code from https://www.postgresql.org/docs/10/errcodes-appendix.html
+                        case "55P03":
+                            return null;
+                        // deadlock_detected error code from https://www.postgresql.org/docs/10/errcodes-appendix.html
+                        case "40P01":
+                            throw new InvalidOperationException($"The request for the distributed lock failed with exit code '{postgresException.SqlState}' (deadlock_detected)", ex);
+                    }
+                }
             }
 
-            return acquireCommandResult;
+            switch (acquireCommandResult)
+            {
+                case 0: return null;
+                case 1: return new object();
+                case AlreadyHeldReturnCode:
+                    if (timeout.Milliseconds == 0) { return null; }
+                    if (timeout.Milliseconds == -1) { throw new InvalidOperationException("Attempted to acquire a lock that is already held on the same connection"); }
+                    await Task.Delay(timeout).ConfigureAwait(false);
+                    return null;
+                default:
+                    throw new InvalidOperationException($"Unexpected return code {acquireCommandResult}");
+            }
         }
 
-        private DbCommand CreateAcquireCommand(DbConnection connection, TimeSpan timeout = new TimeSpan())
+        private DbCommand CreateAcquireCommand(DbConnection connection, TimeSpan timeout)
         {
             var cmd = connection.CreateCommand();
 
@@ -72,6 +99,8 @@ namespace Mirero.DAQ.Test.Custom.Yglee.ApiService.Common.Lock
             );
 
             AppendAcquireFunctionCall();
+
+            cmdText.AppendLine().Append("END");
 
             cmdText.Append(" AS result");
 
